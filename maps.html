@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Screen Sikkim Monasteries Map</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+        
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 15px 0;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .brand-icon {
+            margin-right: 8px;
+            font-size: 1.8rem;
+        }
+        
+        .back-button {
+            background-color: #3a6ea5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: #2a4e7a;
+            transform: translateY(-2px);
+        }
+        
+        .map-container {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            max-width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .map-overlay h2 {
+            margin-bottom: 15px;
+            color: #3a6ea5;
+            font-size: 1.5rem;
+        }
+        
+        .map-overlay p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .monastery-list {
+            margin-top: 15px;
+        }
+        
+        .monastery-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .monastery-item:hover {
+            background-color: #f5f7fa;
+        }
+        
+        .monastery-item:last-child {
+            border-bottom: none;
+        }
+        
+        .monastery-name {
+            font-weight: 600;
+            color: #3a6ea5;
+            margin-bottom: 4px;
+        }
+        
+        .monastery-location {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .map-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1;
+        }
+        
+        .map-btn {
+            background-color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .map-btn:hover {
+            background-color: #f5f7fa;
+            transform: translateY(-2px);
+        }
+        
+        .popup-content {
+            padding: 10px;
+            font-family: 'Inter', sans-serif;
+            max-width: 250px;
+        }
+        
+        .popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3a6ea5;
+            margin-bottom: 8px;
+        }
+        
+        .popup-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .popup-button {
+            background-color: #3a6ea5;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        .popup-button:hover {
+            background-color: #2a4e7a;
+        }
+        
+        .zoom-info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            z-index: 1;
+        }
+        
+        .toggle-sidebar {
+            position: absolute;
+            top: 20px;
+            right: 350px;
+            background: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-sidebar:hover {
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 992px) {
+            .map-overlay {
+                top: auto;
+                bottom: 60px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+            
+            .map-controls {
+                bottom: 10px;
+                left: 10px;
+            }
+            
+            .zoom-info {
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .toggle-sidebar {
+                right: 20px;
+                top: auto;
+                bottom: calc(80vh + 20px);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .map-overlay {
+                padding: 15px;
+            }
+            
+            .map-overlay h2 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🏛️</span>
+                <span class="brand-text">Monastery360 - Sikkim Map</span>
+            </div>
+            <a href="index.html" class="back-button">&larr; Back to Home</a>
+        </div>
+    </nav>
+
+    <!-- Map Container -->
+    <div class="map-container">
+        <div id="map"></div>
+        
+        <!-- Map Overlay -->
+        <div class="map-overlay" id="sidebar">
+            <h2>Sikkim Monasteries</h2>
+            <p>Explore the sacred monasteries of Sikkim on this satellite map. Click on markers for details.</p>
+            
+            <div class="monastery-list">
+                <div class="monastery-item" onclick="focusOnMonastery([88.5715, 27.3005], 'Rumtek Monastery', this)">
+                    <div class="monastery-name">Rumtek Monastery</div>
+                    <div class="monastery-location">
+                        <span>East Sikkim</span>
+                        <span>16th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.2550, 27.3000], 'Pemayangtse Monastery', this)">
+                    <div class="monastery-name">Pemayangtse Monastery</div>
+                    <div class="monastery-location">
+                        <span>West Sikkim</span>
+                        <span>17th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.2833, 27.3667], 'Tashiding Monastery', this)">
+                    <div class="monastery-name">Tashiding Monastery</div>
+                    <div class="monastery-location">
+                        <span>West Sikkim</span>
+                        <span>17th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.6119, 27.3414], 'Enchey Monastery', this)">
+                    <div class="monastery-name">Enchey Monastery</div>
+                    <div class="monastery-location">
+                        <span>East Sikkim</span>
+                        <span>19th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.3897, 27.3242], 'Dubdi Monastery', this)">
+                    <div class="monastery-name">Dubdi Monastery</div>
+                    <div class="monastery-location">
+                        <span>West Sikkim</span>
+                        <span>17th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.3642, 27.3381], 'Kartok Monastery', this)">
+                    <div class="monastery-name">Kartok Monastery</div>
+                    <div class="monastery-location">
+                        <span>West Sikkim</span>
+                        <span>16th Century</span>
+                    </div>
+                </div>
+                <div class="monastery-item" onclick="focusOnMonastery([88.5925, 27.4114], 'Lingdum Monastery', this)">
+                    <div class="monastery-name">Lingdum Monastery</div>
+                    <div class="monastery-location">
+                        <span>East Sikkim</span>
+                        <span>20th Century</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Toggle Sidebar Button -->
+        <div class="toggle-sidebar" onclick="toggleSidebar()">◀</div>
+        
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <button class="map-btn" onclick="zoomIn()">🔍 Zoom In</button>
+            <button class="map-btn" onclick="zoomOut()">🔍 Zoom Out</button>
+            <button class="map-btn" onclick="resetView()">🗺 Reset View</button>
+        </div>
+        
+        <!-- Zoom Info -->
+        <div class="zoom-info">
+            Zoom: <span id="zoom-level">9</span>
+        </div>
+    </div>
+
+    <!-- OpenLayers JS -->
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
+    <script>
+        // MapTiler API key
+        const key = 'tuMq8S306tz9OL24y4jc';
+        
+        // Monastery data
+        const monasteries = [
+            {
+                name: 'Rumtek Monastery',
+                lngLat: [88.5715, 27.3005],
+                description: 'One of the largest and most significant monasteries in Sikkim, also known as the Dharma Chakra Centre. It is a focal point for the Kagyu sect of Tibetan Buddhism.',
+                century: '16th Century',
+                location: 'East Sikkim'
+            },
+            {
+                name: 'Pemayangtse Monastery',
+                lngLat: [88.2550, 27.3000],
+                description: 'A premier monastery known for its intricate sculptures and paintings. One of the oldest in Sikkim, it offers stunning views of the Himalayan ranges.',
+                century: '17th Century',
+                location: 'West Sikkim'
+            },
+            {
+                name: 'Tashiding Monastery',
+                lngLat: [88.2833, 27.3667],
+                description: 'Considered one of the holiest monasteries in Sikkim, perched on top of a hill between Rathong and Rangeet rivers. It is believed that simply seeing this monastery cleanses one\'s sins.',
+                century: '17th Century',
+                location: 'West Sikkim'
+            },
+            {
+                name: 'Enchey Monastery',
+                lngLat: [88.6119, 27.3414],
+                description: 'A beautiful monastery near Gangtok, known for its scenic location and annual Chaam dances. The monastery follows the Nyingma order of Tibetan Buddhism.',
+                century: '19th Century',
+                location: 'East Sikkim'
+            },
+            {
+                name: 'Dubdi Monastery',
+                lngLat: [88.3897, 27.3242],
+                description: 'The first monastery established in Sikkim, also known as Yuksom Monastery. It is located on a hilltop and surrounded by verdant forests.',
+                century: '17th Century',
+                location: 'West Sikkim'
+            },
+            {
+                name: 'Kartok Monastery',
+                lngLat: [88.3642, 27.3381],
+                description: 'Situated by the Kartok Lake, this monastery is known for its peaceful surroundings and beautiful architecture. It is part of the Buddhist pilgrimage circuit.',
+                century: '16th Century',
+                location: 'West Sikkim'
+            },
+            {
+                name: 'Lingdum Monastery',
+                lngLat: [88.5925, 27.4114],
+                description: 'A modern monastery known for its beautiful architecture and peaceful environment. Also called Ranka Monastery, it offers meditation retreats for visitors.',
+                century: '20th Century',
+                location: 'East Sikkim'
+            }
+        ];
+
+        // Initialize the map
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.XYZ({
+                        url: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}@2x.jpg?key=tuMq8S306tz9OL24y4jc`,
+                        tileSize: 512,
+                        crossOrigin: 'anonymous'
+                    })
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([88.45, 27.5]), // Center on Sikkim
+                zoom: 9
+            })
+        });
+
+        // Create a layer for monastery markers
+        const markerLayer = new ol.layer.Vector({
+            source: new ol.source.Vector()
+        });
+        map.addLayer(markerLayer);
+
+        // Add markers for each monastery
+        monasteries.forEach(monastery => {
+            const marker = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat(monastery.lngLat))
+            });
+            
+            marker.setStyle(new ol.style.Style({
+                image: new ol.style.Icon({
+                    src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                    scale: 0.05,
+                    anchor: [0.5, 1]
+                })
+            }));
+            
+            markerLayer.getSource().addFeature(marker);
+            
+            // Add click event to show popup
+            marker.setProperties({
+                name: monastery.name,
+                description: monastery.description,
+                century: monastery.century,
+                location: monastery.location
+            });
+        });
+
+        // Create popup element
+        const popup = new ol.Overlay({
+            element: document.createElement('div'),
+            positioning: 'bottom-center',
+            stopEvent: false,
+            offset: [0, -40]
+        });
+        map.addOverlay(popup);
+        
+        // Style popup element
+        popup.getElement().className = 'popup-content';
+        
+        // Show popup on marker click
+        map.on('click', function(evt) {
+            const feature = map.forEachFeatureAtPixel(evt.pixel, function(feature) {
+                return feature;
+            });
+            
+            if (feature) {
+                const coordinates = feature.getGeometry().getCoordinates();
+                popup.setPosition(coordinates);
+                
+                const name = feature.get('name');
+                const description = feature.get('description');
+                const century = feature.get('century');
+                const location = feature.get('location');
+                
+                popup.getElement().innerHTML = `
+                    <h3 class="popup-title">${name}</h3>
+                    <p class="popup-description">${description}</p>
+                    <p><strong>Location:</strong> ${location}</p>
+                    <p><strong>Established:</strong> ${century}</p>
+                    <button class="popup-button" onclick="alert('Virtual tour for ${name} will open soon!')">Virtual Tour</button>
+                `;
+            } else {
+                popup.setPosition(undefined);
+            }
+        });
+        
+        // Change mouse cursor when over marker
+        map.on('pointermove', function(e) {
+            const pixel = map.getEventPixel(e.originalEvent);
+            const hit = map.hasFeatureAtPixel(pixel);
+            map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+        });
+        
+        // Update zoom level display
+        map.getView().on('change:resolution', function() {
+            document.getElementById('zoom-level').textContent = Math.round(map.getView().getZoom());
+        });
+
+        // Function to focus on a specific monastery
+        function focusOnMonastery(lngLat, name, element) {
+            const view = map.getView();
+            view.animate({
+                center: ol.proj.fromLonLat(lngLat),
+                zoom: 14,
+                duration: 1000
+            });
+            
+            // Remove active class from all items
+            document.querySelectorAll('.monastery-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked item
+            if (element) {
+                element.classList.add('active');
+            }
+            
+            // Show a temporary message
+            const message = document.createElement('div');
+            message.innerHTML = `<div style="background: white; padding: 10px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">Viewing ${name}</div>`;
+            
+            const messageOverlay = new ol.Overlay({
+                position: ol.proj.fromLonLat(lngLat),
+                positioning: 'bottom-center',
+                element: message,
+                stopEvent: false,
+                offset: [0, -30]
+            });
+            map.addOverlay(messageOverlay);
+            
+            // Remove message after 2 seconds
+            setTimeout(() => {
+                map.removeOverlay(messageOverlay);
+            }, 2000);
+        }
+        
+        // Zoom functions
+        function zoomIn() {
+            const view = map.getView();
+            view.animate({
+                zoom: view.getZoom() + 1,
+                duration: 500
+            });
+        }
+        
+        function zoomOut() {
+            const view = map.getView();
+            view.animate({
+                zoom: view.getZoom() - 1,
+                duration: 500
+            });
+        }
+        
+        function resetView() {
+            const view = map.getView();
+            view.animate({
+                center: ol.proj.fromLonLat([88.45, 27.5]),
+                zoom: 9,
+                duration: 1000
+            });
+            
+            // Remove active class from all items
+            document.querySelectorAll('.monastery-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+        
+        // Toggle sidebar visibility
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.querySelector('.toggle-sidebar');
+            
+            if (sidebar.style.display === 'none') {
+                sidebar.style.display = 'block';
+                toggleBtn.innerHTML = '◀';
+                toggleBtn.style.right = '350px';
+            } else {
+                sidebar.style.display = 'none';
+                toggleBtn.innerHTML = '▶';
+                toggleBtn.style.right = '20px';
+            }
+        }
+        
+        // Update map size when window is resized
+        window.addEventListener('resize', function() {
+            setTimeout(function() {
+                map.updateSize();
+            }, 300);
+        });
+    </script>
+</body>
+</html>
