@@ -7,7 +7,7 @@
 
 :root {
     /* Color System */
-    --primary-brown: #3E2723;
+    --primary-brown: #1c1210;
     --secondary-brown: #5D4037;
     --accent-brown: #6D4C41;
     --light-brown: #8D6E63;
@@ -904,4 +904,5 @@ html {
 
 .fade-in {
     animation: fadeInUp 0.6s ease forwards;
+
 }
